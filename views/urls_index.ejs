@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TinyApp</title>
+</head>
+<body>
+<header>
+  <% include ./partials/_header %>
+</header>
+<h1>Welcome to TinyApp!</h1>
+<h2>Here are the results of the loop:</h2>
+<ul>
+  <% for (var key in urls) { %>
+    <li><%= key %> => <%= urls[key] %></li>
+  <%  } %>
+</ul>
+</body>
+</html>
