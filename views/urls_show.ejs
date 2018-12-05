@@ -9,9 +9,10 @@
 </header>
 <h1>Welcome to TinyApp!</h1>
 <h2>Here are the results of your request</h2>
-<ul>
-  <li>The shortened URL is <%= shortURL %></li>
-  <li>The long URL is <%= longURL %></li>
-</ul>
+<h3>Short URL: <%= shortURL %></h3>
+<form action="/urls/<%= shortURL %>" method="POST" style="margin:0px;">
+      <label for="longURL">Edit the long URL:</label>
+      <input id="longURL" type="text" name="longURL" placeholder="<%= longURL %>" style="width: 200px">
+      <input type="submit" value="Edit">
 </body>
 </html>
