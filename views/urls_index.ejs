@@ -11,7 +11,7 @@
 <h2>Here are the results of the loop:</h2>
 <ul>
   <% for (var key in urls) { %>
-    <li><%= key %> => <%= urls[key] %></li>
+    <li><%= key %> => <a href="<%= urls[key] %>"><%= urls[key] %></a> <form action="/urls/<%= key %>/delete" method="POST"><input type="submit" value="Delete"></li>
   <%  } %>
 </ul>
 </body>
