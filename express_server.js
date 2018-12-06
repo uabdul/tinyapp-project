@@ -8,11 +8,31 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 app.set("view engine", "ejs");
 
+//Database of shortened URLs
 let urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": {
+    'userID': "1234",
+    'shortURL': "b2xVn2",
+    'longURL': "http://www.lighthouselabs.ca"
+  },
+  "9sm5xK": {
+    'userID': "1234",
+    'shortURL': "9sm5xK",
+    'longURL': "http://www.google.com"
+  },
+  "b4frh4": {
+    'userID': "5678",
+    'shortURL': "b4frh4",
+    'longURL': "http://www.facebook.com"
+  },
+  "4ada44": {
+    'userID': "5678",
+    'shortURL': "4ada44",
+    'longURL': "http://www.twitter.com"
+  }
 };
 
+//Database of registered users
 const users = {
   "1234": {
     id: "1234",
@@ -26,18 +46,27 @@ const users = {
   }
 }
 
+//Landing page (redirects to login page or /urls based on cookie information).
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  let templateVars = {
+    'user': users[req.cookies["user_id"]]
+  };
+  if (templateVars.user === undefined) {
+    res.redirect("/login")
+  } else {
+    res.redirect("/urls")
+  };
 });
 
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
+// app.get("/urls.json", (req, res) => {
+//   res.json(urlDatabase);
+// });
 
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n")
-});
+// app.get("/hello", (req, res) => {
+//   res.send("<html><body>Hello <b>World</b></body></html>\n")
+// });
 
+//Get request handler for registration page.
 app.get("/register", (req, res) => {
   let templateVars = {
     'user': users[req.cookies["user_id"]]
@@ -45,6 +74,7 @@ app.get("/register", (req, res) => {
   res.render("urls_register", templateVars);
 });
 
+//Post request handler for registration page.
 app.post("/register", (req, res) => {
   let userId = generateRandomString();
   let email = req.body.email;
@@ -69,6 +99,7 @@ app.post("/register", (req, res) => {
 
 });
 
+//Get request handler for login page.
 app.get("/login", (req, res) => {
   let templateVars = {
     'user': users[req.cookies["user_id"]]
@@ -76,20 +107,21 @@ app.get("/login", (req, res) => {
   res.render("urls_login", templateVars);
 });
 
+//Post request handler for login page.
 app.post("/login", (req, res) => {
   let email = req.body.email;
   let password = req.body.password;
   let registered = registrationCheck(email);
   let userId = userIdCheck(email);
 
-  console.log( email, password, registered, userId);
-
   if (registered === undefined) {
-    res.status(403).send('Your email address is not registered. Please register your account.')
+    res.status(403).send('Your email address is not registered. Please register your account.');
+    return;
   };
 
   if (email === users[userId].email && password !== users[userId].password) {
-    res.status(403).send('Incorrect password. Please try again.')
+    res.status(403).send('Incorrect password. Please try again.');
+    return;
   };
 
   if (email === users[userId].email && password === users[userId].password) {
@@ -99,63 +131,104 @@ app.post("/login", (req, res) => {
   };
 });
 
+//Post request handler for addition of new URL to database.
 app.post("/urls", (req, res) => {
+  let user = req.cookies["user_id"];
   let longURL = req.body.longURL;
   let shortURL = generateRandomString();
-  urlDatabase[shortURL] = longURL;
-  res.redirect(`/urls/${shortURL}`);
+  urlDatabase[shortURL] = {
+    'userID': user,
+    'shortURL': shortURL,
+    'longURL': longURL
+  }
+  res.redirect("/");
 });
 
+//Post request handler for logout button.
 app.post("/logout", (req, res) => {
   res.clearCookie('user_id');
   res.redirect("/urls");
 });
 
+//Get request handler for main landing page based on user ID.
 app.get("/urls", (req, res) => {
   let templateVars = {
-    'urls': urlDatabase,
+    'urls': urlsForUser(req.cookies["user_id"]),
     'user': users[req.cookies["user_id"]]
   };
-  console.log(templateVars);
-  res.render("urls_index", templateVars);
+  if (templateVars.user === undefined) {
+    res.redirect("/login")
+  } else {
+    res.render("urls_index", templateVars)
+  };
 });
 
+//Get request handler for adding a new link.
 app.get("/urls/new", (req, res) => {
   let templateVars = {
     'user': users[req.cookies["user_id"]]
   };
-  res.render("urls_new", templateVars);
+  if (templateVars.user === undefined) {
+    res.redirect("/login")
+  } else {
+    res.render("urls_new", templateVars)
+  };
 });
 
 app.get("/urls/:id", (req, res) => {
-  let templateVars = {
-    'shortURL': req.params.id,
-    'longURL': urlDatabase[req.params.id],
-    'user': users[req.cookies["user_id"]]
-  };
-  res.render("urls_show", templateVars);
+  //if "user_id" cookie is empty/undefined, redirects to login page.
+  if (req.cookies["user_id"] === undefined) {
+    res.redirect("/login");
+  // if "user_id" cookie does not match database ID for short URL, sends a 403.
+  } else if (req.cookies["user_id"] !== urlDatabase[req.params.id].userID) {
+    res.status(403).send('You are not authorized to edit this link. Please try a different link.');
+    return;
+  // in every other situation, renders "urls_show" with short URL, long URL and user info.
+  } else {
+    let templateVars = {
+      'shortURL': req.params.id,
+      'longURL': urlDatabase[req.params.id].longURL,
+      'user': users[req.cookies["user_id"]]
+    };
+    res.render("urls_show", templateVars);
+  }
 });
 
+//Post request handler for the edit button.
 app.post("/urls/:id", (req, res) => {
   let shortURL = req.params.id;
   let longURL = req.body.longURL;
-  urlDatabase[shortURL] = longURL;
+  //if "user_id" cookie does not match database ID for short URL, sends a 403.
+  if (req.cookies["user_id"] !== urlDatabase[shortURL].userID) {
+    res.status(403).send('You are not authorized to edit this link. Please try a different link.');
+    return;
+  //if the cookie and the database ID match, updates long URL and redirects to landing page.
+  } else {
+  urlDatabase[shortURL].longURL = longURL;
   res.redirect("/urls");
+  }
 });
 
+//Post request handler for the delete function.
 app.post("/urls/:id/delete", (req, res) => {
-  delete urlDatabase[req.params.id];
-  let templateVars = {
-    'urls': urlDatabase,
-    'user': users[req.cookies["user_id"]]
-  };
-  res.render("urls_index", templateVars);
+  //if "user_id" cookie does not match database ID for short URL, sends a 403.
+  if (req.cookies["user_id"] !== urlDatabase[req.params.id].userID) {
+    res.status(403).send('You are not authorized to delete this link. Please try a different link.');
+  //if the cookie and the database ID match, deletes short URL entry and renders urls_index.
+  } else {
+    delete urlDatabase[req.params.id];
+    let templateVars = {
+      'urls': urlsForUser(req.cookies["user_id"]),
+      'user': users[req.cookies["user_id"]]
+    };
+    res.render("urls_index", templateVars);
+  }
 });
 
+//Get request handler for redirection from short URL to external long URL
 app.get("/u/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
-  let longURL = urlDatabase[shortURL];
-  console.log(longURL);
+  let longURL = urlDatabase[shortURL].longURL;
   res.redirect(longURL);
 });
 
@@ -163,6 +236,7 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
+//Helper function to generate randomized alphanumeric user ID for new users
 function generateRandomString() {
   let alphaNumeric = "abcdefghijklmnopqrstuvwxyz0123456789"
   let string = '';
@@ -172,6 +246,7 @@ function generateRandomString() {
   return string;
 }
 
+// Helper function to check if a user is already registered against database
 function registrationCheck(email) {
   for (user in users) {
     if (users[user].email === email) {
@@ -180,6 +255,7 @@ function registrationCheck(email) {
   }
 }
 
+//Helper function to find the user's ID based on email address
 function userIdCheck(email) {
   for (user in users) {
     if (users[user].email === email) {
@@ -187,3 +263,16 @@ function userIdCheck(email) {
     }
   }
 }
+
+//Helper function to sort through database and find URLs belonging to specific user
+function urlsForUser(id) {
+  let finalOutput = {};
+  let arr = Object.keys(urlDatabase).filter(key => {
+    return urlDatabase[key].userID === id;
+  });
+  arr.forEach(element => {
+    finalOutput[element] = urlDatabase[element];
+  })
+  return finalOutput;
+}
+

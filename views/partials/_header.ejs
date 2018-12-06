@@ -1,7 +1,7 @@
 <h1>TinyApp Header</h1>
 
 <% if (user) {%>
-  Hello, <%= user.id %>! Welcome to TinyApp. <form action="/logout" method="POST" style="margin:0px;"><input type="submit" value="Logout"></form>
+  Hello, <%= user.email %>! Welcome to TinyApp. <form action="/logout" method="POST" style="margin:0px;"><input type="submit" value="Logout"></form>
 <% } else { %>
   Hello! Welcome to TinyApp.
   <a href="/register">Register</a> | <a href="/login">Login</a>

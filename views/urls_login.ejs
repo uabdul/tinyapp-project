@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TinyApp</title>
+</head>
+<body>
+<header>
+  <% include ./partials/_header %>
+</header>
+<h1>Welcome to TinyApp!</h1>
+<h2>Please enter your login information below:</h2>
+<form action="/login" method="POST" style="margin:0px;">
+      <label for="email">Email address:</label>
+      <input id="email" type="email" name="email" placeholder="Please enter your email address" style="width: 250px">
+      <br>
+      <label for="password">Password:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
+      <input id="password" type="password" name="password" placeholder="Please select a unique alphanumeric password" style="width: 250px">
+      <br><input type="submit" value="Login">
+</form>
+<strong>Not a registered member? Please click <a href="/register">here</a> to log in.
+</body>
+</html>

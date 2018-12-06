@@ -8,11 +8,12 @@
   <% include ./partials/_header %>
 </header>
 <h1>Welcome to TinyApp!</h1>
-<h2>Here are the results of the loop:</h2>
+<h2>Here are your tiny URLS:</h2>
 <ul>
-  <% for (var key in urls) { %>
-    <li><%= key %> => <a href="<%= urls[key] %>"><%= urls[key] %></a> <a href="/urls/<%= key %>">Edit</a><form action="/urls/<%= key %>/delete" method="POST"><input type="submit" value="Delete"></form></li>
+  <% for (var url in urls) { %>
+    <li><%= urls[url].shortURL %> => <a href="<%= urls[url].longURL %>"><%= urls[url].longURL %></a> <a href="/urls/<%= url %>">Edit</a><form action="/urls/<%= url %>/delete" method="POST"><input type="submit" value="Delete"></form></li>
   <%  } %>
 </ul>
+<br><strong>Click <a href="/urls/new">here</a> to create a new tiny URL!</strong>
 </body>
 </html>
