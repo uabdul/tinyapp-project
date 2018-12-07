@@ -52,30 +52,23 @@ const users = {
 
 //Landing page (redirects to login page or /urls based on cookie information).
 app.get("/", (req, res) => {
-  let templateVars = {
-    'user': users[req.session.user_id]
-  };
-  if (templateVars.user === undefined) {
+  if (req.session.user_id === undefined) {
     res.redirect("/login")
   } else {
     res.redirect("/urls")
   };
 });
 
-// app.get("/urls.json", (req, res) => {
-//   res.json(urlDatabase);
-// });
-
-// app.get("/hello", (req, res) => {
-//   res.send("<html><body>Hello <b>World</b></body></html>\n")
-// });
-
 //Get request handler for registration page.
 app.get("/register", (req, res) => {
   let templateVars = {
-    'user': users[req.session.user_id]
+  'user': users[req.session.user_id]
+};
+  if (templateVars.user === undefined) {
+    res.render("urls_register", templateVars);
+  } else {
+    res.redirect("/urls");
   };
-  res.render("urls_register", templateVars);
 });
 
 //Post request handler for registration page.
@@ -87,11 +80,13 @@ app.post("/register", (req, res) => {
 
   if (!email || !password) {
     res.status(400).send('Invalid username and/or password. Please try again.')
+    return;
   };
 
   if (registered === true) {
     res.status(400).send('Your email address is already registered. Please log in.')
-  }
+    return;
+  };
 
   users[userId] = {
     id: userId,
@@ -108,7 +103,11 @@ app.get("/login", (req, res) => {
   let templateVars = {
     'user': users[req.session.user_id]
   };
-  res.render("urls_login", templateVars);
+  if (templateVars.user === undefined) {
+    res.render("urls_login", templateVars);
+  } else {
+    res.redirect("/urls");
+  }
 });
 
 //Post request handler for login page.
@@ -131,7 +130,6 @@ app.post("/login", (req, res) => {
   };
 
   if (email === users[userId].email && passwordCheck === true) {
-    console.log(users[userId]);
     req.session.user_id = userId;
     res.redirect("/");
   };
@@ -140,14 +138,18 @@ app.post("/login", (req, res) => {
 //Post request handler for addition of new URL to database.
 app.post("/urls", (req, res) => {
   let user = req.session.user_id;
-  let longURL = req.body.longURL;
+  let longURL = urlCheck(req.body.longURL);
   let shortURL = generateRandomString();
-  urlDatabase[shortURL] = {
-    'userID': user,
-    'shortURL': shortURL,
-    'longURL': longURL
+  if (user === undefined) {
+    res.redirect("/register");
+  } else {
+    urlDatabase[shortURL] = {
+      'userID': user,
+      'shortURL': shortURL,
+      'longURL': longURL
+    }
+    res.redirect(`/urls/${shortURL}`);
   }
-  res.redirect("/");
 });
 
 //Post request handler for logout button.
@@ -163,7 +165,7 @@ app.get("/urls", (req, res) => {
     'user': users[req.session.user_id]
   };
   if (templateVars.user === undefined) {
-    res.redirect("/login")
+    res.render("urls_register", templateVars)
   } else {
     res.render("urls_index", templateVars)
   };
@@ -203,7 +205,7 @@ app.get("/urls/:id", (req, res) => {
 //Post request handler for the edit button.
 app.post("/urls/:id", (req, res) => {
   let shortURL = req.params.id;
-  let longURL = req.body.longURL;
+  let longURL = urlCheck(req.body.longURL);
   //if "user_id" cookie does not match database ID for short URL, sends a 403.
   if (req.session.user_id !== urlDatabase[shortURL].userID) {
     res.status(403).send('You are not authorized to edit this link. Please try a different link.');
@@ -215,12 +217,18 @@ app.post("/urls/:id", (req, res) => {
   }
 });
 
+
 //Post request handler for the delete function.
 app.post("/urls/:id/delete", (req, res) => {
   //if "user_id" cookie does not match database ID for short URL, sends a 403.
   if (req.session.user_id !== urlDatabase[req.params.id].userID) {
     res.status(403).send('You are not authorized to delete this link. Please try a different link.');
   //if the cookie and the database ID match, deletes short URL entry and renders urls_index.
+  } else if (req.session.user_id === undefined) {
+    let templateVars = {
+      'user': users[req.session.user_id]
+    };
+    res.render("urls_register", templateVars)
   } else {
     delete urlDatabase[req.params.id];
     let templateVars = {
@@ -282,3 +290,14 @@ function urlsForUser(id) {
   return finalOutput;
 }
 
+//Helper function to check URL and add protocol if necessary
+
+function urlCheck(url) {
+  if (url === undefined) {
+    return '';
+  } else if (url.startsWith('http://www.')) {
+    return url;
+  } else {
+    return 'http://www.' + url;
+  }
+}
