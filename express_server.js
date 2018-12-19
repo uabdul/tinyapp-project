@@ -295,8 +295,10 @@ function urlsForUser(id) {
 function urlCheck(url) {
   if (url === undefined) {
     return '';
-  } else if (url.startsWith('http://www.')) {
+  } else if (url.startsWith('http://www.') || url.startsWith('https://www.')) {
     return url;
+  } else if (url.startsWith('www')) {
+    return 'http://' + url;
   } else {
     return 'http://www.' + url;
   }

@@ -31,7 +31,7 @@ TinyApp requires the following dependencies:
 - body-parser
 - cookie-session
 
-#Getting Started
+## Getting Started
 
 In order to use TinyApp, please follow these steps:
 - Install all dependencies (using the `npm install` command).
